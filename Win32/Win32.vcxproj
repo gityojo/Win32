@@ -19,13 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Header Files\d3dApp.h" />
-    <ClInclude Include="Header Files\Resource.h" />
-    <ClInclude Include="Header Files\stdafx.h" />
-    <ClInclude Include="Header Files\targetver.h" />
-    <ClInclude Include="Header Files\Win32.h" />
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="Resource Files\favicon.ico" />
     <Image Include="Resource Files\small.ico" />
     <Image Include="Resource Files\Win32.ico" />
@@ -35,10 +28,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source Files\d3dApp.cpp" />
+    <ClCompile Include="Source Files\GameTimer.cpp" />
+    <ClCompile Include="Source Files\InitDirect3D.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="Source Files\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Source Files\Win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\color_ps.cso" />
@@ -47,7 +44,18 @@
   <ItemGroup>
     <FxCompile Include="Shaders\color.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VS</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Header Files\d3dApp.h" />
+    <ClInclude Include="Header Files\GameTimer.h" />
+    <ClInclude Include="Header Files\Resource.h" />
+    <ClInclude Include="Header Files\stdafx.h" />
+    <ClInclude Include="Header Files\targetver.h" />
+    <ClInclude Include="Header Files\Win32.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -107,6 +115,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)Header Files;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -134,7 +143,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
@@ -144,6 +153,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
