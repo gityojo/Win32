@@ -195,8 +195,8 @@ void D3DApp::OnResize()
 
 	mScreenViewport.TopLeftX = 0;
 	mScreenViewport.TopLeftY = 0;
-	mScreenViewport.Width = static_cast<float>(mClientWidth);
-	mScreenViewport.Height = static_cast<float>(mClientHeight);
+	mScreenViewport.Width = static_cast<float>(1920);
+	mScreenViewport.Height = static_cast<float>(1080);
 	mScreenViewport.MinDepth = 0.0f;
 	mScreenViewport.MaxDepth = 1.0f;
 
@@ -361,7 +361,7 @@ bool D3DApp::InitMainWindow()
 	int height = R.bottom - R.top;
 
 	mhMainWnd = CreateWindow(L"D3DWndClassName", mMainWndCaption.c_str(),
-		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
+		WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1920, 1080, 0, 0, mhAppInst, 0);
 	if (!mhMainWnd)
 	{
 		MessageBox(0, L"CreateWindow Failed.", 0, 0);
@@ -418,8 +418,8 @@ bool D3DApp::InitDirect3D()
 	// Fill out a DXGI_SWAP_CHAIN_DESC to describe our swap chain.
 
 	DXGI_SWAP_CHAIN_DESC sd;
-	sd.BufferDesc.Width = mClientWidth;
-	sd.BufferDesc.Height = mClientHeight;
+	sd.BufferDesc.Width = 1920;
+	sd.BufferDesc.Height = 1080;
 	sd.BufferDesc.RefreshRate.Numerator = 60;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -461,6 +461,8 @@ bool D3DApp::InitDirect3D()
 	dxgiAdapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgiFactory);
 
 	dxgiFactory->CreateSwapChain(md3dDevice, &sd, &mSwapChain);
+
+	// mSwapChain->SetFullscreenState(true, 0);
 
 	dxgiDevice->Release();
 	dxgiAdapter->Release();
