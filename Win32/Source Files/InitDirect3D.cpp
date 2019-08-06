@@ -6,8 +6,10 @@
 //
 //***************************************************************************************
 
+#pragma comment(lib, "WinMM")
+
 #include "d3dApp.h"
- 
+
 class InitDirect3DApp : public D3DApp
 {
 public:
@@ -33,6 +35,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 	if( !theApp.Init() )
 		return 0;
 	
+	// PlaySound(TEXT("Resource Files/Sweet Devil.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
+	PlaySound(
+		MAKEINTRESOURCE(IDR_WAVE),
+		GetModuleHandle(NULL),
+		SND_RESOURCE | SND_ASYNC | SND_LOOP);
+
 	return theApp.Run();
 }
 
