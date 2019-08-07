@@ -462,6 +462,8 @@ bool D3DApp::InitDirect3D()
 
 	dxgiFactory->CreateSwapChain(md3dDevice, &sd, &mSwapChain);
 
+	dxgiFactory->MakeWindowAssociation(mhMainWnd, DXGI_MWA_NO_ALT_ENTER);
+
 	// mSwapChain->SetFullscreenState(true, 0);
 
 	dxgiDevice->Release();
