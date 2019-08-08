@@ -368,6 +368,8 @@ bool D3DApp::InitMainWindow()
 		return false;
 	}
 
+	ShowCursor(FALSE);
+
 	ShowWindow(mhMainWnd, SW_SHOW);
 	UpdateWindow(mhMainWnd);
 
