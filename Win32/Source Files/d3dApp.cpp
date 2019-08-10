@@ -12,6 +12,16 @@ namespace
 	// procedure to our member function window procedure because we cannot
 	// assign a member function to WNDCLASS::lpfnWndProc.
 	D3DApp* gd3dApp = 0;
+
+	HWND mhMainWnd;
+	HWND hSplashWnd;
+
+	BITMAP bitmap;
+	HBITMAP hSplashBMP;
+	LONG bitmapWidth;
+	LONG bitmapHeight;
+	HDC hSplashDC;
+	HDC hMemoryDC;
 }
 
 LRESULT CALLBACK
@@ -28,9 +38,25 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg)
 	{
 	case WM_ERASEBKGND:
+		/*
+		BOOL BitBlt(
+			HDC   hdc,
+			int   x,
+			int   y,
+			int   cx,
+			int   cy,
+			HDC   hdcSrc,
+			int   x1,
+			int   y1,
+			DWORD rop
+		);
+		*/
+		// rop: A raster-operation code
+		// The BitBlt function performs a bit-block transfer
+		// of the color data corresponding to a rectangle of pixels
+		// from the specified source device context into a destination device context.
 		BitBlt((HDC)wParam, 0, 0, bitmapWidth, bitmapHeight, hMemoryDC, 0, 0, SRCCOPY);
 		break;
-
 	case WM_CHAR:
 	case WM_KILLFOCUS:
 	case WM_LBUTTONDOWN:
@@ -40,13 +66,14 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		ReleaseDC(hSplashWnd, hSplashDC);
 		ReleaseDC(hSplashWnd, hMemoryDC);
 		DestroyWindow(hSplashWnd);
+
+		ShowCursor(FALSE);
 		ShowWindow(mhMainWnd, SW_SHOW);
 		UpdateWindow(mhMainWnd);
 		SetForegroundWindow(mhMainWnd);
 		break;
-
 	default:
-		return (DefWindowProc(hWnd, msg, wParam, lParam));
+		return (DefWindowProc(hwnd, msg, wParam, lParam));
 	}
 
 	return 0;
@@ -59,7 +86,6 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 	mClientWidth(1920),
 	mClientHeight(1010),
 	mEnable4xMsaa(true),
-	mhMainWnd(0),
 	mAppPaused(false),
 	mMinimized(false),
 	mMaximized(false),
@@ -463,7 +489,6 @@ bool D3DApp::InitWindow()
 
 	ShowWindow(hSplashWnd, SW_SHOW);
 	UpdateWindow(hSplashWnd);
-	SetForegroundWindow(hSplashWnd);
 
 	return true;
 }

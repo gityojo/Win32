@@ -55,15 +55,6 @@ protected:
 
 protected:
 	HINSTANCE mhAppInst;
-	HWND mhMainWnd;
-	HWND hSplashWnd;
-
-	BITMAP bitmap;
-	HBITMAP hSplashBMP;
-	LONG bitmapWidth;
-	LONG bitmapHeight;
-	HDC hSplashDC;
-	HDC hMemoryDC;
 	
 	bool      mAppPaused;
 	bool      mMinimized;
