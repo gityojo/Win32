@@ -12,11 +12,14 @@
 #define D3DAPP_H
 
 #include <d3d11.h>
+#include <DirectXMath.h>
+#include <string>
+#include <assert.h>
 #include <windows.h>
 #include "Resource.h"
 #include "GameTimer.h"
-#include <string>
-#include <assert.h>
+
+using namespace DirectX;
 
 class D3DApp
 {
@@ -45,15 +48,23 @@ public:
 	virtual void OnMouseMove(WPARAM btnState, int x, int y){ }
 
 protected:
-	bool InitMainWindow();
+	bool InitWindow();
 	bool InitDirect3D();
 
 	void CalculateFrameStats();
 
 protected:
-
 	HINSTANCE mhAppInst;
-	HWND      mhMainWnd;
+	HWND mhMainWnd;
+	HWND hSplashWnd;
+
+	BITMAP bitmap;
+	HBITMAP hSplashBMP;
+	LONG bitmapWidth;
+	LONG bitmapHeight;
+	HDC hSplashDC;
+	HDC hMemoryDC;
+	
 	bool      mAppPaused;
 	bool      mMinimized;
 	bool      mMaximized;

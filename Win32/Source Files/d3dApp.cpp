@@ -22,12 +22,42 @@ MainWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	return gd3dApp->MsgProc(hwnd, msg, wParam, lParam);
 }
 
+LRESULT CALLBACK
+SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_ERASEBKGND:
+		BitBlt((HDC)wParam, 0, 0, bitmapWidth, bitmapHeight, hMemoryDC, 0, 0, SRCCOPY);
+		break;
+
+	case WM_CHAR:
+	case WM_KILLFOCUS:
+	case WM_LBUTTONDOWN:
+	case WM_RBUTTONDOWN:
+	case WM_MBUTTONDOWN:
+		DeleteObject(hSplashBMP);
+		ReleaseDC(hSplashWnd, hSplashDC);
+		ReleaseDC(hSplashWnd, hMemoryDC);
+		DestroyWindow(hSplashWnd);
+		ShowWindow(mhMainWnd, SW_SHOW);
+		UpdateWindow(mhMainWnd);
+		SetForegroundWindow(mhMainWnd);
+		break;
+
+	default:
+		return (DefWindowProc(hWnd, msg, wParam, lParam));
+	}
+
+	return 0;
+}
+
 D3DApp::D3DApp(HINSTANCE hInstance)
 	: mhAppInst(hInstance),
 	mMainWndCaption(L"D3D11"),
 	md3dDriverType(D3D_DRIVER_TYPE_HARDWARE),
 	mClientWidth(1920),
-	mClientHeight(1080),
+	mClientHeight(1010),
 	mEnable4xMsaa(true),
 	mhMainWnd(0),
 	mAppPaused(false),
@@ -118,7 +148,7 @@ int D3DApp::Run()
 
 bool D3DApp::Init()
 {
-	if (!InitMainWindow())
+	if (!InitWindow())
 		return false;
 
 	if (!InitDirect3D())
@@ -332,12 +362,12 @@ LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-bool D3DApp::InitMainWindow()
+bool D3DApp::InitWindow()
 {
 	WNDCLASSEX wc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = MainWndProc;
+	wc.lpfnWndProc = (WNDPROC)MainWndProc;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = mhAppInst;
@@ -345,7 +375,7 @@ bool D3DApp::InitMainWindow()
 	wc.hCursor = LoadCursor(0, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
 	wc.lpszMenuName = 0;
-	wc.lpszClassName = L"D3DWndClassName";
+	wc.lpszClassName = L"MainWindowClass";
 	wc.hIconSm = LoadIcon(mhAppInst, MAKEINTRESOURCE(IDI_WIN32));
 
 	if (!RegisterClassEx(&wc))
@@ -360,18 +390,80 @@ bool D3DApp::InitMainWindow()
 	int width = R.right - R.left;
 	int height = R.bottom - R.top;
 
-	mhMainWnd = CreateWindow(L"D3DWndClassName", mMainWndCaption.c_str(),
+	mhMainWnd = CreateWindow(L"MainWindowClass", mMainWndCaption.c_str(),
 		WS_OVERLAPPED | WS_MINIMIZEBOX | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, width, height, 0, 0, mhAppInst, 0);
+
 	if (!mhMainWnd)
 	{
 		MessageBox(0, L"CreateWindow Failed.", 0, 0);
 		return false;
 	}
 
-	ShowCursor(FALSE);
+	// Win32 Splash Screen Source
+	WNDCLASSEX splashwc;
+	splashwc.cbSize = sizeof(WNDCLASSEX);
+	splashwc.style = 0;
+	splashwc.lpfnWndProc = (WNDPROC)SplashWndProc;
+	splashwc.cbClsExtra = 0;
+	splashwc.cbWndExtra = 0;
+	splashwc.hInstance = mhAppInst;
+	splashwc.hIcon = NULL;
+	splashwc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	splashwc.hbrBackground = NULL;
+	splashwc.lpszMenuName = NULL;
+	splashwc.lpszClassName = L"SplashWindowClass";
+	splashwc.hIconSm = NULL;
 
-	ShowWindow(mhMainWnd, SW_SHOW);
-	UpdateWindow(mhMainWnd);
+	if (!RegisterClassEx(&splashwc))
+	{
+		MessageBox(NULL, L"Failed To Register The Splash Window Class.", L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	RECT DesktopRect;
+	GetWindowRect(GetDesktopWindow(), &DesktopRect);
+
+	hSplashBMP = LoadBitmap(mhAppInst, MAKEINTRESOURCE(IDB_BITMAP));
+
+	if (!hSplashBMP)
+	{
+		MessageBox(NULL, L"Failed To Load Bitmap", L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	GetObject(hSplashBMP, sizeof(BITMAP), &bitmap);
+	bitmapWidth = bitmap.bmWidth;
+	bitmapHeight = bitmap.bmHeight;
+
+	hSplashWnd = CreateWindowEx(
+		0,
+		L"SplashWindowClass",
+		L"Splash",
+		WS_POPUP,
+		(DesktopRect.right - bitmapWidth) / 2,
+		(DesktopRect.bottom - bitmapHeight) / 2,
+		bitmapWidth,
+		bitmapHeight,
+		NULL,
+		NULL,
+		mhAppInst,
+		NULL);
+
+	if (!hSplashWnd)
+	{
+		MessageBox(NULL, L"Splash Window Creation Failed.", L"Error", MB_OK | MB_ICONERROR);
+		return false;
+	}
+
+	// DC (Device Context)
+	// GDI (Graphics Device Interface)
+	hSplashDC = GetDC(hSplashWnd);
+	hMemoryDC = CreateCompatibleDC(hSplashDC);
+	SelectObject(hMemoryDC, (HGDIOBJ)hSplashBMP);
+
+	ShowWindow(hSplashWnd, SW_SHOW);
+	UpdateWindow(hSplashWnd);
+	SetForegroundWindow(hSplashWnd);
 
 	return true;
 }
