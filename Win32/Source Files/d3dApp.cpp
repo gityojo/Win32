@@ -24,6 +24,7 @@ namespace
 	HDC hMemoryDC;
 
 	UINT_PTR timerID;
+	BOOL res;
 }
 
 LRESULT CALLBACK
@@ -60,7 +61,7 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		BitBlt((HDC)wParam, 0, 0, bitmapWidth, bitmapHeight, hMemoryDC, 0, 0, SRCCOPY);
 		break;
 	case WM_TIMER:
-		BOOL res = KillTimer(hSplashWnd, timerID);
+		res = KillTimer(hSplashWnd, timerID);
 
 		DeleteObject(hSplashBMP);
 		ReleaseDC(hSplashWnd, hSplashDC);
@@ -83,7 +84,7 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void CALLBACK
 TimerProc(HWND Arg1, UINT Arg2, UINT_PTR Arg3, DWORD Arg4)
 {
-	BOOL res = KillTimer(Arg1, Arg3);
+	res = KillTimer(Arg1, Arg3);
 
 	DeleteObject(hSplashBMP);
 	ReleaseDC(Arg1, hSplashDC);
@@ -507,7 +508,7 @@ bool D3DApp::InitWindow()
 	ShowWindow(hSplashWnd, SW_SHOW);
 	UpdateWindow(hSplashWnd);
 
-	timerID = SetTimer(hSplashWnd, 0, 1000, (TIMERPROC)NULL);
+	timerID = SetTimer(hSplashWnd, 0, 1000, (TIMERPROC)TimerProc);
 
 	return true;
 }
