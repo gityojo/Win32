@@ -22,6 +22,8 @@ namespace
 	LONG bitmapHeight;
 	HDC hSplashDC;
 	HDC hMemoryDC;
+
+	UINT_PTR timerID;
 }
 
 LRESULT CALLBACK
@@ -57,11 +59,9 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		// from the specified source device context into a destination device context.
 		BitBlt((HDC)wParam, 0, 0, bitmapWidth, bitmapHeight, hMemoryDC, 0, 0, SRCCOPY);
 		break;
-	case WM_CHAR:
-	case WM_KILLFOCUS:
-	case WM_LBUTTONDOWN:
-	case WM_RBUTTONDOWN:
-	case WM_MBUTTONDOWN:
+	case WM_TIMER:
+		BOOL res = KillTimer(hSplashWnd, timerID);
+
 		DeleteObject(hSplashBMP);
 		ReleaseDC(hSplashWnd, hSplashDC);
 		ReleaseDC(hSplashWnd, hMemoryDC);
@@ -71,12 +71,29 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		ShowWindow(mhMainWnd, SW_SHOW);
 		UpdateWindow(mhMainWnd);
 		SetForegroundWindow(mhMainWnd);
+
 		break;
 	default:
 		return (DefWindowProc(hwnd, msg, wParam, lParam));
 	}
 
 	return 0;
+}
+
+void CALLBACK
+TimerProc(HWND Arg1, UINT Arg2, UINT_PTR Arg3, DWORD Arg4)
+{
+	BOOL res = KillTimer(Arg1, Arg3);
+
+	DeleteObject(hSplashBMP);
+	ReleaseDC(Arg1, hSplashDC);
+	ReleaseDC(Arg1, hMemoryDC);
+	DestroyWindow(Arg1);
+
+	ShowCursor(FALSE);
+	ShowWindow(mhMainWnd, SW_SHOW);
+	UpdateWindow(mhMainWnd);
+	SetForegroundWindow(mhMainWnd);
 }
 
 D3DApp::D3DApp(HINSTANCE hInstance)
@@ -204,7 +221,7 @@ void D3DApp::OnResize()
 
 	// Resize the swap chain and recreate the render target view.
 
-	mSwapChain->ResizeBuffers(1, mClientWidth, mClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+	// mSwapChain->ResizeBuffers(1, mClientWidth, mClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
 	ID3D11Texture2D* backBuffer;
 	mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
 	md3dDevice->CreateRenderTargetView(backBuffer, 0, &mRenderTargetView);
@@ -489,6 +506,8 @@ bool D3DApp::InitWindow()
 
 	ShowWindow(hSplashWnd, SW_SHOW);
 	UpdateWindow(hSplashWnd);
+
+	timerID = SetTimer(hSplashWnd, 0, 1000, (TIMERPROC)NULL);
 
 	return true;
 }
