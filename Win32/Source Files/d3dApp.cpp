@@ -85,18 +85,26 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void CALLBACK
 TimerProc(HWND Arg1, UINT Arg2, UINT_PTR Arg3, DWORD Arg4)
 {
-	BOOL res = KillTimer(Arg1, Arg3);
-	DWORD lastError = GetLastError();
+	switch (Arg3)
+	{
+	case IDT_TIMER1:
+	{
+		BOOL res = KillTimer(Arg1, Arg3);
+		DWORD lastError = GetLastError();
 
-	DeleteObject(hSplashBMP);
-	ReleaseDC(Arg1, hSplashDC);
-	ReleaseDC(Arg1, hMemoryDC);
-	DestroyWindow(Arg1);
+		DeleteObject(hSplashBMP);
+		ReleaseDC(Arg1, hSplashDC);
+		ReleaseDC(Arg1, hMemoryDC);
+		DestroyWindow(Arg1);
 
-	ShowCursor(FALSE);
-	ShowWindow(mhMainWnd, SW_SHOW);
-	UpdateWindow(mhMainWnd);
-	SetForegroundWindow(mhMainWnd);
+		ShowCursor(FALSE);
+		ShowWindow(mhMainWnd, SW_SHOW);
+		UpdateWindow(mhMainWnd);
+		SetForegroundWindow(mhMainWnd);
+
+		break;
+	}
+	}
 }
 
 D3DApp::D3DApp(HINSTANCE hInstance)
