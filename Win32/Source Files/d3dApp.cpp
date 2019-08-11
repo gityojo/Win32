@@ -22,9 +22,6 @@ namespace
 	LONG bitmapHeight;
 	HDC hSplashDC;
 	HDC hMemoryDC;
-
-	UINT_PTR timerID;
-	BOOL res;
 }
 
 LRESULT CALLBACK
@@ -63,7 +60,8 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		{
 			// Define a scope specific to the case statement and define your variable within it.
-			BOOL res = KillTimer(hSplashWnd, timerID);
+			BOOL res = KillTimer(hSplashWnd, IDT_TIMER);
+			DWORD lastError = GetLastError();
 		}
 
 		DeleteObject(hSplashBMP);
@@ -87,7 +85,8 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 void CALLBACK
 TimerProc(HWND Arg1, UINT Arg2, UINT_PTR Arg3, DWORD Arg4)
 {
-	res = KillTimer(Arg1, Arg3);
+	BOOL res = KillTimer(Arg1, Arg3);
+	DWORD lastError = GetLastError();
 
 	DeleteObject(hSplashBMP);
 	ReleaseDC(Arg1, hSplashDC);
@@ -511,7 +510,7 @@ bool D3DApp::InitWindow()
 	ShowWindow(hSplashWnd, SW_SHOW);
 	UpdateWindow(hSplashWnd);
 
-	timerID = SetTimer(hSplashWnd, 0, 1000, (TIMERPROC)TimerProc);
+	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER, 1000, (TIMERPROC)TimerProc);
 
 	return true;
 }
