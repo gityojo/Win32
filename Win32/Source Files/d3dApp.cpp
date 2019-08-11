@@ -60,7 +60,7 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_TIMER:
 		{
 			// Define a scope specific to the case statement and define your variable within it.
-			BOOL res = KillTimer(hSplashWnd, IDT_TIMER);
+			BOOL res = KillTimer(hSplashWnd, IDT_TIMER1);
 			DWORD lastError = GetLastError();
 		}
 
@@ -510,7 +510,7 @@ bool D3DApp::InitWindow()
 	ShowWindow(hSplashWnd, SW_SHOW);
 	UpdateWindow(hSplashWnd);
 
-	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER, 1000, (TIMERPROC)TimerProc);
+	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER1, 1000, (TIMERPROC)TimerProc);
 
 	return true;
 }
