@@ -61,7 +61,10 @@ SplashWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		BitBlt((HDC)wParam, 0, 0, bitmapWidth, bitmapHeight, hMemoryDC, 0, 0, SRCCOPY);
 		break;
 	case WM_TIMER:
-		res = KillTimer(hSplashWnd, timerID);
+		{
+			// Define a scope specific to the case statement and define your variable within it.
+			BOOL res = KillTimer(hSplashWnd, timerID);
+		}
 
 		DeleteObject(hSplashBMP);
 		ReleaseDC(hSplashWnd, hSplashDC);
