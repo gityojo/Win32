@@ -72,9 +72,6 @@
     <ClInclude Include="Header Files\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header Files\Win32.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Header Files\GameTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -55,7 +55,6 @@
     <ClInclude Include="Header Files\Resource.h" />
     <ClInclude Include="Header Files\stdafx.h" />
     <ClInclude Include="Header Files\targetver.h" />
-    <ClInclude Include="Header Files\Win32.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

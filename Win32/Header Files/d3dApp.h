@@ -20,8 +20,6 @@
 #include "Resource.h"
 #include "GameTimer.h"
 
-using namespace DirectX;
-
 class D3DApp
 {
 public:
