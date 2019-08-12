@@ -13,6 +13,7 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <DirectXColors.h>
 #include <string>
 #include <assert.h>
 #include <windows.h>
@@ -65,7 +66,7 @@ protected:
 	GameTimer mTimer;
 
 	ID3D11Device* md3dDevice;
-	ID3D11DeviceContext* md3dImmediateContext;
+	ID3D11DeviceContext* md3dDeviceContext;
 	IDXGISwapChain* mSwapChain;
 	ID3D11Texture2D* mDepthStencilBuffer;
 	ID3D11RenderTargetView* mRenderTargetView;

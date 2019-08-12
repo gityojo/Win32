@@ -123,7 +123,7 @@ D3DApp::D3DApp(HINSTANCE hInstance)
 	m4xMsaaQuality(0),
 
 	md3dDevice(0),
-	md3dImmediateContext(0),
+	md3dDeviceContext(0),
 	mSwapChain(0),
 	mDepthStencilBuffer(0),
 	mRenderTargetView(0),
@@ -145,10 +145,10 @@ D3DApp::~D3DApp()
 	mDepthStencilBuffer->Release();
 
 	// Restore all default settings.
-	if (md3dImmediateContext)
-		md3dImmediateContext->ClearState();
+	if (md3dDeviceContext)
+		md3dDeviceContext->ClearState();
 
-	md3dImmediateContext->Release();
+	md3dDeviceContext->Release();
 	md3dDevice->Release();
 }
 
@@ -215,7 +215,7 @@ bool D3DApp::Init()
 
 void D3DApp::OnResize()
 {
-	assert(md3dImmediateContext);
+	assert(md3dDeviceContext);
 	assert(md3dDevice);
 	assert(mSwapChain);
 
@@ -274,7 +274,7 @@ void D3DApp::OnResize()
 
 	// Bind the render target view and depth/stencil view to the pipeline.
 
-	md3dImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
+	md3dDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
 
 
 	// Set the viewport transform.
@@ -286,7 +286,7 @@ void D3DApp::OnResize()
 	mScreenViewport.MinDepth = 0.0f;
 	mScreenViewport.MaxDepth = 1.0f;
 
-	md3dImmediateContext->RSSetViewports(1, &mScreenViewport);
+	md3dDeviceContext->RSSetViewports(1, &mScreenViewport);
 }
 
 LRESULT D3DApp::MsgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -517,7 +517,13 @@ bool D3DApp::InitWindow()
 	hMemoryDC = CreateCompatibleDC(hSplashDC);
 	SelectObject(hMemoryDC, (HGDIOBJ)hSplashBMP);
 
+	// WS_EX_TOOLWINDOW
+	ShowWindow(hSplashWnd, SW_HIDE);
+	LONG style = GetWindowLong(hSplashWnd, GWL_EXSTYLE);
+	style |= WS_EX_TOOLWINDOW;
+	SetWindowLong(hSplashWnd, GWL_EXSTYLE, style);
 	ShowWindow(hSplashWnd, SW_SHOW);
+
 	UpdateWindow(hSplashWnd);
 
 	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER1, 1000, (TIMERPROC)TimerProc);
@@ -544,7 +550,7 @@ bool D3DApp::InitDirect3D()
 		D3D11_SDK_VERSION,
 		&md3dDevice,
 		&featureLevel,
-		&md3dImmediateContext);
+		&md3dDeviceContext);
 
 	if (FAILED(hr))
 	{
