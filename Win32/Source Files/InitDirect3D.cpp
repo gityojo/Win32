@@ -11,6 +11,7 @@
 
 #include "d3dApp.h"
 
+using namespace std;
 using namespace DirectX;
 
 struct Vertex
@@ -32,6 +33,7 @@ public:
 
 private:
 	void InputAssembler();
+	ID3DBlob* LoadShader(const string& filename);
 
 private:
 	ID3D11Buffer* mBoxVB;
@@ -131,11 +133,15 @@ void InitDirect3DApp::DrawScene()
 	assert(mSwapChain);
 
 	md3dDeviceContext->ClearRenderTargetView(mRenderTargetView, Colors::Black);
-	md3dDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
+	md3dDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	md3dDeviceContext->IASetVertexBuffers(0, 1, &mBoxVB, &stride, &offset);
+
+	md3dDeviceContext->IASetIndexBuffer(mBoxIB, DXGI_FORMAT_R16_UINT, 0);
+
+	md3dDeviceContext->IASetInputLayout(mInputLayout);
 
 	md3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -172,4 +178,73 @@ void InitDirect3DApp::InputAssembler()
 	vsd.SysMemSlicePitch = 0;
 
 	md3dDevice->CreateBuffer(&vbd, &vsd, &mBoxVB);
+
+	uint16_t indices[36] =
+	{
+		// front face
+		0, 1, 2,
+		0, 2, 3,
+
+		// back face
+		4, 6, 5,
+		4, 7, 6,
+
+		// left face
+		4, 5, 1,
+		4, 1, 0,
+
+		// right face
+		3, 2, 6,
+		3, 6, 7,
+
+		// top face
+		1, 5, 6,
+		1, 6, 2,
+
+		// bottom face
+		4, 0, 3,
+		4, 3, 7
+	};
+
+	D3D11_BUFFER_DESC ibd;
+	ibd.ByteWidth = sizeof(indices);
+	ibd.Usage = D3D11_USAGE_DEFAULT;
+	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	ibd.CPUAccessFlags = 0;
+	ibd.MiscFlags = 0;
+	ibd.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA isd;
+	isd.pSysMem = indices;
+	isd.SysMemPitch = 0;
+	isd.SysMemSlicePitch = 0;
+	
+	md3dDevice->CreateBuffer(&ibd, &isd, &mBoxIB);
+
+	D3D11_INPUT_ELEMENT_DESC vertexDesc[2] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+	};
+
+	ID3DBlob* vertexShader = LoadShader("Shaders/VertexShader.cso");
+
+	md3dDevice->CreateInputLayout(vertexDesc, 2, vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), &mInputLayout);
+}
+
+ID3DBlob* InitDirect3DApp::LoadShader(const string& filename)
+{
+	ifstream ifs(filename, ios::binary);
+
+	ifs.seekg(0, ios::end);
+	ifstream::pos_type size = ifs.tellg();
+	ifs.seekg(0, ios::beg);
+
+	ID3DBlob* pBlob;
+	D3DCreateBlob(size, &pBlob);
+
+	ifs.read((char*)pBlob->GetBufferPointer(), size);
+	ifs.close();
+
+	return pBlob;
 }

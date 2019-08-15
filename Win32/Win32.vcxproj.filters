@@ -47,19 +47,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\color_ps.cso">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\color_vs.cso">
-      <Filter>Shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Shaders\color.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Header Files\d3dApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -75,5 +62,10 @@
     <ClInclude Include="Header Files\GameTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\VertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

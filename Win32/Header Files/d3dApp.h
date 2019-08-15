@@ -12,11 +12,12 @@
 #define D3DAPP_H
 
 #include <d3d11.h>
+#include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 #include <string>
+#include <fstream>
 #include <assert.h>
-#include <windows.h>
 #include "Resource.h"
 #include "GameTimer.h"
 
