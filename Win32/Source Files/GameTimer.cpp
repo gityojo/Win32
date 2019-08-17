@@ -1,7 +1,3 @@
-//***************************************************************************************
-// GameTimer.cpp by Frank Luna (C) 2011 All Rights Reserved.
-//***************************************************************************************
-
 #include <windows.h>
 #include "GameTimer.h"
 
@@ -68,7 +64,6 @@ void GameTimer::Start()
 {
 	__int64 startTime;
 	QueryPerformanceCounter((LARGE_INTEGER*)&startTime);
-
 
 	// Accumulate the time elapsed between stop and start pairs.
 	//

@@ -1,7 +1,3 @@
-//***************************************************************************************
-// d3dApp.cpp by Frank Luna (C) 2011 All Rights Reserved.
-//***************************************************************************************
-
 #include "d3dApp.h"
 #include <WindowsX.h>
 #include <sstream>
@@ -221,7 +217,6 @@ void D3DApp::OnResize()
 
 	// Release the old views, as they hold references to the buffers we
 	// will be destroying.  Also release the old depth/stencil buffer.
-
 	if (mRenderTargetView != nullptr)
 		mRenderTargetView->Release();
 
@@ -233,7 +228,6 @@ void D3DApp::OnResize()
 
 
 	// Resize the swap chain and recreate the render target view.
-
 	// mSwapChain->ResizeBuffers(1, mClientWidth, mClientHeight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
 	ID3D11Texture2D* backBuffer;
 	mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
@@ -241,7 +235,6 @@ void D3DApp::OnResize()
 	backBuffer->Release();
 
 	// Create the depth/stencil buffer and view.
-
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
 
 	depthStencilDesc.Width = mClientWidth;
@@ -271,14 +264,10 @@ void D3DApp::OnResize()
 	md3dDevice->CreateTexture2D(&depthStencilDesc, 0, &mDepthStencilBuffer);
 	md3dDevice->CreateDepthStencilView(mDepthStencilBuffer, 0, &mDepthStencilView);
 
-
 	// Bind the render target view and depth/stencil view to the pipeline.
-
 	md3dDeviceContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
 
-
 	// Set the viewport transform.
-
 	mScreenViewport.TopLeftX = 0;
 	mScreenViewport.TopLeftY = 0;
 	mScreenViewport.Width = static_cast<float>(mClientWidth);
@@ -534,7 +523,6 @@ bool D3DApp::InitWindow()
 bool D3DApp::InitDirect3D()
 {
 	// Create the device and device context.
-
 	UINT createDeviceFlags = 0;
 #if defined(DEBUG) || defined(_DEBUG)  
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -567,13 +555,11 @@ bool D3DApp::InitDirect3D()
 	// Check 4X MSAA quality support for our back buffer format.
 	// All Direct3D 11 capable devices support 4X MSAA for all render 
 	// target formats, so we only need to check quality support.
-
 	md3dDevice->CheckMultisampleQualityLevels(
 		DXGI_FORMAT_R8G8B8A8_UNORM, 4, &m4xMsaaQuality);
 	assert(m4xMsaaQuality > 0);
 
 	// Fill out a DXGI_SWAP_CHAIN_DESC to describe our swap chain.
-
 	DXGI_SWAP_CHAIN_DESC sd;
 	sd.BufferDesc.Width = mClientWidth;
 	sd.BufferDesc.Height = mClientHeight;
@@ -630,7 +616,6 @@ bool D3DApp::InitDirect3D()
 	// The remaining steps that need to be carried out for d3d creation
 	// also need to be executed every time the window is resized.  So
 	// just call the OnResize method here to avoid code duplication.
-
 	OnResize();
 
 	return true;

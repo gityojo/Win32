@@ -1,11 +1,3 @@
-//***************************************************************************************
-// Init Direct3D.cpp by Frank Luna (C) 2011 All Rights Reserved.
-//
-// Demonstrates the sample framework by initializing Direct3D, clearing 
-// the screen, and displaying frame stats.
-//
-//***************************************************************************************
-
 #pragma once
 #pragma comment(lib, "WinMM")
 
@@ -18,6 +10,11 @@ struct Vertex
 {
 	XMFLOAT3 Pos;
 	XMFLOAT4 Color;
+};
+
+struct ConstantBuffer
+{
+	XMFLOAT4X4 WorldViewProj;
 };
 
 class InitDirect3DApp : public D3DApp
@@ -36,8 +33,12 @@ private:
 	ID3DBlob* LoadShader(const string& filename);
 
 private:
-	ID3D11Buffer* mBoxVB;
-	ID3D11Buffer* mBoxIB;
+	ID3D11Buffer* mVertexBuffer;
+	ID3D11Buffer* mIndexBuffer;
+	ID3D11Buffer* mConstantBuffer;
+
+	ID3D11VertexShader* mVertexShader;
+	ID3D11PixelShader* mPixelShader;
 
 	ID3D11InputLayout* mInputLayout;
 
@@ -122,32 +123,38 @@ void InitDirect3DApp::UpdateScene(float dt)
 	XMMATRIX worldViewProj = world * view * proj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
-	/*ObjectConstants objConstants;
-	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
-	mObjectCB->CopyData(0, objConstants);*/
+	ConstantBuffer cb;
+	XMStoreFloat4x4(&cb.WorldViewProj, XMMatrixTranspose(worldViewProj));
+	md3dDeviceContext->UpdateSubresource(mConstantBuffer, 0, nullptr, &cb, 0, 0);
 }
 
 void InitDirect3DApp::DrawScene()
 {
-	assert(md3dDeviceContext);
-	assert(mSwapChain);
-
 	md3dDeviceContext->ClearRenderTargetView(mRenderTargetView, Colors::Black);
 	md3dDeviceContext->ClearDepthStencilView(mDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
+	md3dDeviceContext->IASetInputLayout(mInputLayout);
+
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
-	md3dDeviceContext->IASetVertexBuffers(0, 1, &mBoxVB, &stride, &offset);
+	md3dDeviceContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
 
-	md3dDeviceContext->IASetIndexBuffer(mBoxIB, DXGI_FORMAT_R16_UINT, 0);
-
-	md3dDeviceContext->IASetInputLayout(mInputLayout);
+	md3dDeviceContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 
 	md3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// md3dDeviceContext->DrawIndexed(36, 0, 0);
+	md3dDeviceContext->VSSetShader(mVertexShader, nullptr, 0);
 
-	mSwapChain->Present(0, 0);
+	md3dDeviceContext->VSSetConstantBuffers(0, 1, &mConstantBuffer);
+
+	md3dDeviceContext->PSSetShader(mPixelShader, nullptr, 0);
+
+	md3dDeviceContext->DrawIndexed(36, 0, 0);
+
+	// Present the rendered image to the window.  Because the maximum frame latency is set to 1,
+	// the render loop will generally be throttled to the screen refresh rate, typically around
+	// 60 Hz, by sleeping the application on Present until the screen is refreshed.
+	mSwapChain->Present(1, 0);
 }
 
 void InitDirect3DApp::InputAssembler()
@@ -177,7 +184,7 @@ void InitDirect3DApp::InputAssembler()
 	vsd.SysMemPitch = 0;
 	vsd.SysMemSlicePitch = 0;
 
-	md3dDevice->CreateBuffer(&vbd, &vsd, &mBoxVB);
+	md3dDevice->CreateBuffer(&vbd, &vsd, &mVertexBuffer);
 
 	uint16_t indices[36] =
 	{
@@ -219,7 +226,22 @@ void InitDirect3DApp::InputAssembler()
 	isd.SysMemPitch = 0;
 	isd.SysMemSlicePitch = 0;
 	
-	md3dDevice->CreateBuffer(&ibd, &isd, &mBoxIB);
+	md3dDevice->CreateBuffer(&ibd, &isd, &mIndexBuffer);
+
+	D3D11_BUFFER_DESC cbd;
+	cbd.ByteWidth = sizeof(ConstantBuffer);
+	cbd.Usage = D3D11_USAGE_DEFAULT;
+	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	cbd.CPUAccessFlags = 0;
+	cbd.MiscFlags = 0;
+	cbd.StructureByteStride = 0;
+
+	md3dDevice->CreateBuffer(&cbd, nullptr, &mConstantBuffer);
+
+	ID3DBlob* vertexShader = LoadShader("Shaders/VertexShader.cso");
+	ID3DBlob* pixelShader = LoadShader("Shaders/PixelShader.cso");
+
+	md3dDevice->CreateVertexShader(vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), nullptr, &mVertexShader);
 
 	D3D11_INPUT_ELEMENT_DESC vertexDesc[2] =
 	{
@@ -227,9 +249,9 @@ void InitDirect3DApp::InputAssembler()
 		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
-	ID3DBlob* vertexShader = LoadShader("Shaders/VertexShader.cso");
-
 	md3dDevice->CreateInputLayout(vertexDesc, 2, vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), &mInputLayout);
+
+	md3dDevice->CreatePixelShader(pixelShader->GetBufferPointer(), pixelShader->GetBufferSize(), nullptr, &mPixelShader);
 }
 
 ID3DBlob* InitDirect3DApp::LoadShader(const string& filename)
