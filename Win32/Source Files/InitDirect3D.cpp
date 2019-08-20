@@ -41,14 +41,13 @@ private:
 	ID3D11PixelShader* mPixelShader;
 
 	ID3D11InputLayout* mInputLayout;
+	ID3D11RasterizerState* mRasterizerState;
 
-	XMFLOAT4X4 mWorld;
-	XMFLOAT4X4 mView;
-	XMFLOAT4X4 mProj;
+	XMMATRIX mWorld;
+	XMMATRIX mView;
+	XMMATRIX mProj;
 
-	float mTheta = XM_PI * 1.5f;
-	float mPhi = XM_PIDIV4;
-	float mRadius = 5.0f;
+	float angle = 0.0f;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -74,13 +73,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
 }
 
 InitDirect3DApp::InitDirect3DApp(HINSTANCE hInstance)
-: D3DApp(hInstance) 
+: D3DApp(hInstance)
 {
 	XMMATRIX I = XMMatrixIdentity();
 
-	XMStoreFloat4x4(&mWorld, I);
-	XMStoreFloat4x4(&mView, I);
-	XMStoreFloat4x4(&mProj, I);
+	mWorld = I;
+	mView = I;
+	mProj = I;
 }
 
 InitDirect3DApp::~InitDirect3DApp()
@@ -100,27 +99,23 @@ bool InitDirect3DApp::Init()
 void InitDirect3DApp::OnResize()
 {
 	D3DApp::OnResize();
+
+	mProj = XMMatrixPerspectiveFovLH(0.25f * XM_PI, AspectRatio(), 1.0f, 1000.0f);
 }
 
 void InitDirect3DApp::UpdateScene(float dt)
 {
-	// Convert Spherical to Cartesian coordinates.
-	float x = mRadius * sinf(mPhi) * cosf(mTheta);
-	float z = mRadius * sinf(mPhi) * sinf(mTheta);
-	float y = mRadius * cosf(mPhi);
+	angle += 0.01f;
+	mWorld = XMMatrixRotationY(angle);
 
 	// Build the view matrix.
-	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
-	XMVECTOR target = XMVectorZero();
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	XMVECTOR eyePosition = XMVectorSet(0.0f, 0.0f, -6.0f, 1.0f);
+	XMVECTOR focusPosition = XMVectorZero();
+	XMVECTOR upDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-	XMStoreFloat4x4(&mView, view);
+	mView = XMMatrixLookAtLH(eyePosition, focusPosition, upDirection);
 
-	XMMATRIX world = XMLoadFloat4x4(&mWorld);
-	XMMATRIX proj = XMLoadFloat4x4(&mProj);
-
-	XMMATRIX worldViewProj = world * view * proj;
+	XMMATRIX worldViewProj = mWorld * mView * mProj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ConstantBuffer cb;
@@ -149,6 +144,8 @@ void InitDirect3DApp::DrawScene()
 
 	md3dDeviceContext->PSSetShader(mPixelShader, nullptr, 0);
 
+	md3dDeviceContext->RSSetState(mRasterizerState);
+
 	md3dDeviceContext->DrawIndexed(36, 0, 0);
 
 	// Present the rendered image to the window.  Because the maximum frame latency is set to 1,
@@ -162,7 +159,7 @@ void InitDirect3DApp::InputAssembler()
 	Vertex vertices[8] =
 	{
 		{XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::White)},
-		{XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Black)},
+		{XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Violet)},
 		{XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Red)},
 		{XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::Green)},
 		{XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Blue)},
@@ -252,6 +249,14 @@ void InitDirect3DApp::InputAssembler()
 	md3dDevice->CreateInputLayout(vertexDesc, 2, vertexShader->GetBufferPointer(), vertexShader->GetBufferSize(), &mInputLayout);
 
 	md3dDevice->CreatePixelShader(pixelShader->GetBufferPointer(), pixelShader->GetBufferSize(), nullptr, &mPixelShader);
+
+	D3D11_RASTERIZER_DESC rd;
+	ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
+	rd.FillMode = D3D11_FILL_SOLID;
+	rd.CullMode = D3D11_CULL_BACK;
+	rd.DepthClipEnable = TRUE;
+
+	md3dDevice->CreateRasterizerState(&rd, &mRasterizerState);
 }
 
 ID3DBlob* InitDirect3DApp::LoadShader(const string& filename)

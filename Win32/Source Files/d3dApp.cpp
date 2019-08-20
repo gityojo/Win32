@@ -515,7 +515,7 @@ bool D3DApp::InitWindow()
 
 	UpdateWindow(hSplashWnd);
 
-	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER1, 1000, (TIMERPROC)TimerProc);
+	UINT_PTR timerID = SetTimer(hSplashWnd, IDT_TIMER1, 100, (TIMERPROC)TimerProc);
 
 	return true;
 }
