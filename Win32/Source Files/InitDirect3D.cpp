@@ -47,6 +47,7 @@ private:
 	XMMATRIX mView;
 	XMMATRIX mProj;
 
+	UINT sphereIndexCount;
 	float angle = 0.0f;
 };
 
@@ -109,8 +110,8 @@ void InitDirect3DApp::UpdateScene(float dt)
 	mWorld = XMMatrixRotationY(angle);
 
 	// Build the view matrix.
-	XMVECTOR eyePosition = XMVectorSet(0.0f, 0.0f, -6.0f, 1.0f);
-	XMVECTOR focusPosition = XMVectorZero();
+	XMVECTOR eyePosition = XMVectorSet(0.0f, -1.0f, -7.0f, 1.0f);
+	XMVECTOR focusPosition = XMVectorSet(0.0f, -1.0f, -0.0f, 1.0f);
 	XMVECTOR upDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	mView = XMMatrixLookAtLH(eyePosition, focusPosition, upDirection);
@@ -147,6 +148,7 @@ void InitDirect3DApp::DrawScene()
 	md3dDeviceContext->RSSetState(mRasterizerState);
 
 	md3dDeviceContext->DrawIndexed(36, 0, 0);
+	md3dDeviceContext->DrawIndexed(sphereIndexCount, 36, 8);
 
 	// Present the rendered image to the window.  Because the maximum frame latency is set to 1,
 	// the render loop will generally be throttled to the screen refresh rate, typically around
@@ -156,20 +158,29 @@ void InitDirect3DApp::DrawScene()
 
 void InitDirect3DApp::InputAssembler()
 {
-	Vertex vertices[8] =
+	GeometryGenerator gg;
+	GeometryGenerator::MeshData mesh = gg.CreateSphere(1.0f, 60, 60);
+	sphereIndexCount = (UINT)mesh.Indices32.size();
+
+	vector<Vertex> vertices =
 	{
-		{XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::White)},
-		{XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Violet)},
-		{XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Red)},
-		{XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::Green)},
-		{XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Blue)},
-		{XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT4(Colors::Yellow)},
-		{XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT4(Colors::Cyan)},
-		{XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Magenta)}
+		{XMFLOAT3(-1.0f, -3.0f, -1.0f), XMFLOAT4(Colors::White)},
+		{XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::Violet)},
+		{XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::Red)},
+		{XMFLOAT3(+1.0f, -3.0f, -1.0f), XMFLOAT4(Colors::Green)},
+		{XMFLOAT3(-1.0f, -3.0f, +1.0f), XMFLOAT4(Colors::Blue)},
+		{XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Yellow)},
+		{XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Cyan)},
+		{XMFLOAT3(+1.0f, -3.0f, +1.0f), XMFLOAT4(Colors::Magenta)}
 	};
 
+	for (uint32_t i = 0; i < mesh.Vertices.size(); i++)
+	{
+		vertices.push_back(Vertex({mesh.Vertices[i].Position, XMFLOAT4(Colors::LimeGreen)}));
+	}
+
 	D3D11_BUFFER_DESC vbd;
-	vbd.ByteWidth = sizeof(vertices);
+	vbd.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
 	vbd.Usage = D3D11_USAGE_DEFAULT;
 	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	vbd.CPUAccessFlags = 0;
@@ -177,13 +188,13 @@ void InitDirect3DApp::InputAssembler()
 	vbd.StructureByteStride = 0;
 
 	D3D11_SUBRESOURCE_DATA vsd;
-	vsd.pSysMem = vertices;
+	vsd.pSysMem = vertices.data();
 	vsd.SysMemPitch = 0;
 	vsd.SysMemSlicePitch = 0;
 
 	md3dDevice->CreateBuffer(&vbd, &vsd, &mVertexBuffer);
 
-	uint16_t indices[36] =
+	vector<uint16_t> indices =
 	{
 		// front face
 		0, 1, 2,
@@ -210,8 +221,10 @@ void InitDirect3DApp::InputAssembler()
 		4, 3, 7
 	};
 
+	indices.insert(indices.end(), mesh.GetIndices16().begin(), mesh.GetIndices16().end());
+
 	D3D11_BUFFER_DESC ibd;
-	ibd.ByteWidth = sizeof(indices);
+	ibd.ByteWidth = sizeof(uint16_t) * (UINT)indices.size();
 	ibd.Usage = D3D11_USAGE_DEFAULT;
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibd.CPUAccessFlags = 0;
@@ -219,7 +232,7 @@ void InitDirect3DApp::InputAssembler()
 	ibd.StructureByteStride = 0;
 
 	D3D11_SUBRESOURCE_DATA isd;
-	isd.pSysMem = indices;
+	isd.pSysMem = indices.data();
 	isd.SysMemPitch = 0;
 	isd.SysMemSlicePitch = 0;
 	

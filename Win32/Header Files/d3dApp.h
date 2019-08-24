@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "Resource.h"
 #include "GameTimer.h"
+#include "GeometryGenerator.h"
 
 class D3DApp
 {

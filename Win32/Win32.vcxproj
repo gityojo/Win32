@@ -29,6 +29,7 @@
   <ItemGroup>
     <ClCompile Include="Source Files\d3dApp.cpp" />
     <ClCompile Include="Source Files\GameTimer.cpp" />
+    <ClCompile Include="Source Files\GeometryGenerator.cpp" />
     <ClCompile Include="Source Files\InitDirect3D.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -53,6 +54,7 @@
   <ItemGroup>
     <ClInclude Include="Header Files\d3dApp.h" />
     <ClInclude Include="Header Files\GameTimer.h" />
+    <ClInclude Include="Header Files\GeometryGenerator.h" />
     <ClInclude Include="Header Files\Resource.h" />
     <ClInclude Include="Header Files\stdafx.h" />
     <ClInclude Include="Header Files\targetver.h" />
