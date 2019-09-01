@@ -45,7 +45,8 @@ private:
 
 	XMMATRIX mBoxWorld;
 	XMMATRIX mSphereWorld;
-	XMMATRIX mFbxWorld;
+	XMMATRIX mFbx1World;
+	XMMATRIX mFbx2World;
 
 	XMMATRIX mView;
 	XMMATRIX mProj;
@@ -94,7 +95,8 @@ InitDirect3DApp::InitDirect3DApp(HINSTANCE hInstance)
 
 	mBoxWorld = I;
 	mSphereWorld = I;
-	mFbxWorld = I;
+	mFbx1World = I;
+	mFbx2World = I;
 
 	mView = I;
 	mProj = I;
@@ -124,8 +126,8 @@ void InitDirect3DApp::OnResize()
 void InitDirect3DApp::UpdateScene(float dt)
 {
 	// Build the view matrix.
-	XMVECTOR eyePosition = XMVectorSet(0.0f, -1.0f, -7.0f, 1.0f);
-	XMVECTOR focusPosition = XMVectorSet(0.0f, -1.0f, -0.0f, 1.0f);
+	XMVECTOR eyePosition = XMVectorSet(0.0f, 0.0f, -7.0f, 1.0f);
+	XMVECTOR focusPosition = XMVectorZero();
 	XMVECTOR upDirection = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	mView = XMMatrixLookAtLH(eyePosition, focusPosition, upDirection);
@@ -157,8 +159,7 @@ void InitDirect3DApp::DrawScene()
 
 	angle += 0.01f;
 
-	mBoxWorld = XMMatrixTranslation(0.0f, -1.0f, 0.0f);
-	//mBoxWorld = XMMatrixRotationY(angle);
+	mBoxWorld = XMMatrixTranslation(0.0f, -1.0f, 0.0f) * XMMatrixRotationY(-angle);
 	worldViewProj = mBoxWorld * mView * mProj;
 
 	// Update the constant buffer with the latest worldViewProj matrix.
@@ -236,6 +237,10 @@ void InitDirect3DApp::InputAssembler()
 	indices.insert(indices.end(), mesh.GetIndices16().begin(), mesh.GetIndices16().end());
 
 	FbxManager* manager = FbxManager::Create();
+	FbxIOSettings* ios = FbxIOSettings::Create(manager, IOSROOT);
+	manager->SetIOSettings(ios);
+	FbxScene* scene = FbxScene::Create(manager, "");
+
 	manager->Destroy();
 
 	mBoxIndexCount = 36;
