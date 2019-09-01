@@ -1,6 +1,7 @@
 #ifndef D3DAPP_H
 #define D3DAPP_H
 
+#include <fbxsdk.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
