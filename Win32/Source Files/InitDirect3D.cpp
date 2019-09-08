@@ -30,6 +30,11 @@ public:
 
 private:
 	void InputAssembler();
+	void DisplayContent(FbxScene* pScene);
+	void DisplayContent(FbxNode* pNode);
+	void DisplayMesh(FbxNode* pNode);
+	void DisplayControlPoints(FbxMesh* pMesh);
+	void DisplayPolygons(FbxMesh* pMesh);
 	ID3DBlob* LoadShader(const string& filename);
 
 private:
@@ -53,15 +58,21 @@ private:
 
 	UINT mBoxVertexOffset;
 	UINT mSphereVertexOffset;
-	UINT mFbxVertexOffset;
+	UINT mFbx1VertexOffset;
+	UINT mFbx2VertexOffset;
 
 	UINT mBoxIndexOffset;
 	UINT mSphereIndexOffset;
-	UINT mFbxIndexOffset;
+	UINT mFbx1IndexOffset;
+	UINT mFbx2IndexOffset;
 
 	UINT mBoxIndexCount;
 	UINT mSphereIndexCount;
-	UINT mFbxIndexCount;
+	UINT mFbx1IndexCount;
+	UINT mFbx2IndexCount;
+
+	vector<XMFLOAT3> fbxVertices;
+	vector<uint32_t> fbxIndices;
 
 	float angle = 0.0f;
 };
@@ -144,7 +155,7 @@ void InitDirect3DApp::DrawScene()
 	UINT offset = 0;
 	md3dDeviceContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
 
-	md3dDeviceContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
+	md3dDeviceContext->IASetIndexBuffer(mIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	md3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -179,6 +190,26 @@ void InitDirect3DApp::DrawScene()
 
 	md3dDeviceContext->DrawIndexed(mSphereIndexCount, mSphereIndexOffset, mSphereVertexOffset);
 
+	mFbx1World = XMMatrixRotationZ(XM_PI) * XMMatrixScaling(0.00003f, 0.00003f, 0.00003f) * XMMatrixRotationY(-angle) * XMMatrixTranslation(-3.0f, 0.0f, 0.0f);
+	worldViewProj = mFbx1World * mView * mProj;
+
+	// Update the constant buffer with the latest worldViewProj matrix.
+	XMStoreFloat4x4(&cb.WorldViewProj, XMMatrixTranspose(worldViewProj));
+	md3dDeviceContext->UpdateSubresource(mConstantBuffer, 0, nullptr, &cb, 0, 0);
+	md3dDeviceContext->VSSetConstantBuffers(0, 1, &mConstantBuffer);
+
+	md3dDeviceContext->DrawIndexed(mFbx1IndexCount, mFbx1IndexOffset, mFbx1VertexOffset);
+
+	mFbx2World = XMMatrixRotationX(-0.5f * XM_PI) * XMMatrixScaling(0.5f, 0.5f, 0.5f) * XMMatrixRotationY(angle) * XMMatrixTranslation(3.0f, 0.0f, 0.0f);
+	worldViewProj = mFbx2World * mView * mProj;
+
+	// Update the constant buffer with the latest worldViewProj matrix.
+	XMStoreFloat4x4(&cb.WorldViewProj, XMMatrixTranspose(worldViewProj));
+	md3dDeviceContext->UpdateSubresource(mConstantBuffer, 0, nullptr, &cb, 0, 0);
+	md3dDeviceContext->VSSetConstantBuffers(0, 1, &mConstantBuffer);
+
+	md3dDeviceContext->DrawIndexed(mFbx2IndexCount, mFbx2IndexOffset, mFbx2VertexOffset);
+
 	// Present the rendered image to the window.  Because the maximum frame latency is set to 1,
 	// the render loop will generally be throttled to the screen refresh rate, typically around
 	// 60 Hz, by sleeping the application on Present until the screen is refreshed.
@@ -199,7 +230,7 @@ void InitDirect3DApp::InputAssembler()
 		{XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Magenta)}
 	};
 
-	vector<uint16_t> indices =
+	vector<uint32_t> indices =
 	{
 		// front face
 		0, 1, 2,
@@ -241,19 +272,67 @@ void InitDirect3DApp::InputAssembler()
 	manager->SetIOSettings(ios);
 	FbxScene* scene = FbxScene::Create(manager, "");
 
+	FbxImporter* importer = FbxImporter::Create(manager, "");
+	importer->Initialize("Resource Files/AngelLucy/AngelLucy.fbx", -1, manager->GetIOSettings());
+	importer->Import(scene);
+	importer->Destroy();
+
+	FbxGeometryConverter geometryConverter(manager);
+	geometryConverter.Triangulate(scene, true);
+
+	fbxVertices.resize(0);
+	fbxIndices.resize(0);
+
+	DisplayContent(scene);
+
+	UINT fbx1VertexCount = (UINT)fbxVertices.size();
+	UINT fbx1IndexCount = (UINT)fbxIndices.size();
+
+	for (uint32_t i = 0; i < fbx1VertexCount; i++)
+	{
+		vertices.push_back(Vertex({fbxVertices[i], XMFLOAT4(Colors::Gold)}));
+	}
+
+	indices.insert(indices.end(), fbxIndices.begin(), fbxIndices.end());
+
+	importer = FbxImporter::Create(manager, "");
+	importer->Initialize("Resource Files/ao_twinte_chan/ao_twinte_chan.fbx", -1, manager->GetIOSettings());
+	importer->Import(scene);
+	importer->Destroy();
+
+	geometryConverter.Triangulate(scene, true);
+
+	fbxVertices.resize(0);
+	fbxIndices.resize(0);
+
+	DisplayContent(scene);
+
+	UINT fbx2VertexCount = (UINT)fbxVertices.size();
+	UINT fbx2IndexCount = (UINT)fbxIndices.size();
+
+	for (uint32_t i = 0; i < fbx2VertexCount; i++)
+	{
+		vertices.push_back(Vertex({fbxVertices[i], XMFLOAT4(Colors::Pink)}));
+	}
+
+	indices.insert(indices.end(), fbxIndices.begin(), fbxIndices.end());
+
 	manager->Destroy();
 
 	mBoxIndexCount = 36;
 	mSphereIndexCount = (UINT)mesh.Indices32.size();
-	mFbxIndexCount = 0;
+	mFbx1IndexCount = fbx1IndexCount;
+	mFbx2IndexCount = fbx2IndexCount;
 
 	mBoxIndexOffset = 0;
 	mSphereIndexOffset = mBoxIndexOffset + mBoxIndexCount;
-	mFbxIndexOffset = mSphereIndexOffset + mSphereIndexCount;
+	mFbx1IndexOffset = mSphereIndexOffset + mSphereIndexCount;
+	mFbx2IndexOffset = mFbx1IndexOffset + fbx1IndexCount;
 
 	mBoxVertexOffset = 0;
 	mSphereVertexOffset = mBoxVertexOffset + 8;
-	mFbxVertexOffset = mSphereVertexOffset + (UINT)mesh.Vertices.size();
+	mFbx1VertexOffset = mSphereVertexOffset + (UINT)mesh.Vertices.size();
+	mFbx2VertexOffset = mFbx1VertexOffset + fbx1VertexCount;
 
 	D3D11_BUFFER_DESC vbd;
 	vbd.ByteWidth = sizeof(Vertex) * (UINT)vertices.size();
@@ -271,7 +350,7 @@ void InitDirect3DApp::InputAssembler()
 	md3dDevice->CreateBuffer(&vbd, &vsd, &mVertexBuffer);
 
 	D3D11_BUFFER_DESC ibd;
-	ibd.ByteWidth = sizeof(uint16_t) * (UINT)indices.size();
+	ibd.ByteWidth = sizeof(uint32_t) * (UINT)indices.size();
 	ibd.Usage = D3D11_USAGE_DEFAULT;
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	ibd.CPUAccessFlags = 0;
@@ -313,10 +392,88 @@ void InitDirect3DApp::InputAssembler()
 	D3D11_RASTERIZER_DESC rd;
 	ZeroMemory(&rd, sizeof(D3D11_RASTERIZER_DESC));
 	rd.FillMode = D3D11_FILL_SOLID;
-	rd.CullMode = D3D11_CULL_BACK;
+	rd.CullMode = D3D11_CULL_NONE;
 	rd.DepthClipEnable = TRUE;
 
 	md3dDevice->CreateRasterizerState(&rd, &mRasterizerState);
+}
+
+void InitDirect3DApp::DisplayContent(FbxScene* pScene)
+{
+	int i;
+	FbxNode* lNode = pScene->GetRootNode();
+
+	if (lNode)
+	{
+		for (i = 0; i < lNode->GetChildCount(); i++)
+		{
+			DisplayContent(lNode->GetChild(i));
+		}
+	}
+}
+
+void InitDirect3DApp::DisplayContent(FbxNode* pNode)
+{
+	FbxNodeAttribute::EType lAttributeType;
+
+	if (pNode->GetNodeAttribute() == NULL)
+	{
+		FBXSDK_printf("NULL Node Attribute\n\n");
+	}
+	else
+	{
+		lAttributeType = (pNode->GetNodeAttribute()->GetAttributeType());
+
+		switch (lAttributeType)
+		{
+		default:
+			break;
+		case FbxNodeAttribute::eMesh:
+			DisplayMesh(pNode);
+			break;
+		}
+	}
+
+	for (int i = 0; i < pNode->GetChildCount(); i++)
+	{
+		DisplayContent(pNode->GetChild(i));
+	}
+}
+
+void InitDirect3DApp::DisplayMesh(FbxNode* pNode)
+{
+	FbxMesh* lMesh = (FbxMesh*)pNode->GetNodeAttribute();
+
+	DisplayControlPoints(lMesh);
+	DisplayPolygons(lMesh);
+}
+
+void InitDirect3DApp::DisplayControlPoints(FbxMesh* pMesh)
+{
+	int lControlPointsCount = pMesh->GetControlPointsCount();
+	FbxVector4* lControlPoints = pMesh->GetControlPoints();
+
+	for (int i = 0; i < lControlPointsCount; i++)
+	{
+		FbxVector4 vector4 = lControlPoints[i];
+		fbxVertices.push_back(XMFLOAT3(static_cast<float>(vector4[0]), static_cast<float>(vector4[1]), static_cast<float>(vector4[2])));
+	}
+}
+
+void InitDirect3DApp::DisplayPolygons(FbxMesh* pMesh)
+{
+	int lPolygonCount = pMesh->GetPolygonCount();
+
+	for (int i = 0; i < lPolygonCount; i++)
+	{
+		int lPolygonSize = pMesh->GetPolygonSize(i);
+
+		for (int j = 0; j < lPolygonSize; j++)
+		{
+			int lControlPointIndex = pMesh->GetPolygonVertex(i, j);
+			fbxIndices.push_back(lControlPointIndex);
+		} // for polygonSize
+	} // for polygonCount
 }
 
 ID3DBlob* InitDirect3DApp::LoadShader(const string& filename)
